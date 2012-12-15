@@ -58,7 +58,7 @@ Routine({ 1.wait; ~cut.pause; }).play;
 //16
 m;
 //17
-~ca.release(0.01);
+~ca0.release(0.01);
 //18
 ~cut.resume;
 //19

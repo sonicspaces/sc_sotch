@@ -26,6 +26,11 @@ Sotch : Music {
 				lastTrig = time;
 			});
 		}, 51, 1);
+		MIDIdef.cc(\mv2, {| v |
+			if(v > 0, {
+				("cc111: " ++ v).postln;
+			});
+		}, 111, 1);
 	}
 	addResponders {
 		var lastTrig = Date.getDate.bootSeconds;
