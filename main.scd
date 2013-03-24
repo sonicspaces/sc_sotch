@@ -1,11 +1,18 @@
 
 m = Sotch();
 
-m.midiTest;//for marij, midi cc message no.51 channel 2
-m.addResponders;
-m.gui;
-
+//level check
+s.meter;
+//get ready
+m.gui.addResponders;
 
 //end the piece
 m.end;
 m.openScoreFile;
+
+//test midi
+MIDIClient.init;
+MIDIIn.connectAll;
+t = MIDIOut(0);
+t.control(1,  51, 33);//que
+t.control(1, 111, 12);//slider

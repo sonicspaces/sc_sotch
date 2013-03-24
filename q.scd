@@ -102,7 +102,7 @@ Routine({
 }).play;
 //35
 ~cut = BBCut2(
-		CutStream1(),
+		CutStream1(s.options.numOutputBusChannels + 1),
 		WarpCutProc1(
 			{ [1.3, 2.6, 5.2] wchoose: [0.7, 0.2, 0.1] },
 			{ [9, 19, 35].choose },
