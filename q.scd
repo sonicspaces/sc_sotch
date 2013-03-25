@@ -99,6 +99,8 @@ Routine({
 	15.wait;
 	~cm0 = Synth(\cnfr0, [fade: 5, amp: 0.5]);
 	NodeWatcher.register(~cm0);
+	120.wait;
+	~lg1.release(0.03);
 }).play;
 //35
 ~cut = BBCut2(

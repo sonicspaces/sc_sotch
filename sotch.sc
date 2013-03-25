@@ -16,7 +16,7 @@ Sotch : Music {
 		busz.add(Bus.audio(s, 1));
 	}
 	addResponders {
-		var lastTrig = Date.getDate.rawSeconds;//.bootSeconds;
+		var lastTrig = Date.getDate.rawSeconds;
 		var midiSpc = \midi.asSpec;
 		var cmSpc = [0.1, 4.0].asSpec;
 		var qwin, qnum, slider;
@@ -25,21 +25,22 @@ Sotch : Music {
 		MIDIClient.init;
 		MIDIIn.connectAll;
 
-		qwin = Window(bounds: screen, border: false);
+		qwin = Window(bounds: screen);
 		qwin.alwaysOnTop_(true);
-		qwin.alpha_(0.7);
+		qwin.alpha_(0.8);
 		qnum = StaticText(qwin, qwin.view.bounds);
 		qnum.font_(Font("Monaco", screen.height * 0.8));
 		qnum.stringColor_(Color.black);
 		qnum.string_("");
 		qnum.align_('center');
-		slider = EZSlider(qwin, 100@screen.height, "slider",
+		slider = EZSlider(qwin, 100 @ (screen.height * 0.8), "slider",
 			'midi'.asSpec, nil, 0, false, 100, 100, 0, 50, 'vert', 0@0, 10@10);
-		slider.font_(Font(size: 20));
+		slider.font_(Font("Helvetica", 20));
+		slider.setColors(knobColor: Color.blue);
 		qwin.front;
 
 		MIDIdef.cc(\q, {| v |
-			var time = Date.getDate.rawSeconds;//.bootSeconds;
+			var time = Date.getDate.rawSeconds;
 			if((v > 32) && ((time - lastTrig) > 0.5), {
 				Routine({
 					qnum.string_(que);
@@ -91,16 +92,14 @@ Sotch : Music {
 			Out.ar(0, sig);
 		}).send(s);
 
-		SynthDef(\ca0, {
-		| gate=1, fade=1, amp=1, buf, rate=1 |
+		SynthDef(\ca0, {| gate=1, fade=1, amp=1, buf, rate=1 |
 			var sig, env;
 			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
 			sig = PlayBuf.ar(2, buf, rate, doneAction: 2) * env;
 			Out.ar(0, sig);
 		}).send(s);
 
-		SynthDef(\ca1, {
-		| gate=1, fade=1, amp=1, buf, rate=1 |
+		SynthDef(\ca1, {| gate=1, fade=1, amp=1, buf, rate=1 |
 			var sig, env;
 			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
 			sig = PlayBuf.ar(2, buf, rate, doneAction: 2) * env;
@@ -139,7 +138,7 @@ Sotch : Music {
 		SynthDef(\cnfr0, {| gate=1, fade=1, amp=1, real=0.1 |
 			var fft, sig, env;
 			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
-			sig = SoundIn.ar(0, env, In.ar(busz[0])).clip2(1.0);
+			sig = SoundIn.ar(1, env, In.ar(busz[0])).clip2(1.0);
 			fft = FFT(LocalBuf(2048).clear, sig);
 			fft = PV_ConformalMap(fft, real, 1);
 			sig = Pan2.ar(IFFT(fft), LFNoise2.kr(2, 0.4));
