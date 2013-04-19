@@ -97,8 +97,10 @@ Routine({ 1.1.wait; ~pb.release(0.03) }).play;
 ~lg1 = Synth(\lgst1, [fade: 40, amp: 0.6]);
 Routine({
 	15.wait;
-	~cm0 = Synth(\cnfr0, [fade: 5, amp: 0.5]);
-	NodeWatcher.register(~cm0);
+	s.bind({
+		~cm0 = Synth(\cnfr0, [fade: 5, amp: 0.5]);
+		~cm0.register;
+	});
 	120.wait;
 	~lg1.release(0.03);
 }).play;

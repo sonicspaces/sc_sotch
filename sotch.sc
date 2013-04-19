@@ -15,51 +15,197 @@ Sotch : Music {
 	allocBusz {
 		busz.add(Bus.audio(s, 1));
 	}
-	addResponders {
+	gui {
+		//midi
 		var lastTrig = Date.getDate.rawSeconds;
 		var midiSpc = \midi.asSpec;
 		var cmSpc = [0.1, 4.0].asSpec;
-		var qwin, qnum, slider;
-		var screen = Window.screenBounds;
+		//gui addition
+		var slider, h, w;
+		//meters
+		var iLevels, oLevels, levels, iFunc, oFunc, iSynth, oSynth, synthFunc;
+		var numIns = s.options.numInputBusChannels;
+		var numOuts = s.options.numOutputBusChannels;
+		var separator;
 
+		//gui
+		if((GUI.id == 'qt').not, { GUI.qt });
+		h = Window.screenBounds.height;
+		w = Window.screenBounds.width;
+
+		//window
+		qwin = Window(this.class.asString, Rect(100, 100, w * 0.7, h * 0.5));
+		qwin.alwaysOnTop = true;
+
+		//midi
 		MIDIClient.init;
 		MIDIIn.connectAll;
 
-		qwin = Window(bounds: screen);
-		qwin.alwaysOnTop_(true);
-		qwin.alpha_(0.8);
-		qnum = StaticText(qwin, qwin.view.bounds);
-		qnum.font_(Font("Monaco", screen.height * 0.8));
-		qnum.stringColor_(Color.black);
-		qnum.string_("");
-		qnum.align_('center');
-		slider = EZSlider(qwin, 100 @ (screen.height * 0.8), "slider",
-			'midi'.asSpec, nil, 0, false, 100, 100, 0, 50, 'vert', 0@0, 10@10);
-		slider.font_(Font("Helvetica", 20));
-		slider.setColors(knobColor: Color.blue);
+		//meters
+		separator = UserView();
+		separator.drawFunc = {|v|
+			Pen.moveTo(0@v.bounds.height);
+			Pen.lineTo(0@0);
+			Pen.stroke;
+		};
+		iLevels = Array.fill(numIns, {
+			LevelIndicator()
+			.drawsPeak_(true)
+			.warning_(0.8)
+			.numTicks_(9)
+			.numMajorTicks_(3)
+			.value_(1.0.rand)
+			;
+		});
+		oLevels = Array.fill(numOuts, {
+			LevelIndicator()
+			.drawsPeak_(true)
+			.warning_(0.8)
+			.numTicks_(9)
+			.numMajorTicks_(3)
+			.value_(1.0.rand)
+			;
+		});
+		levels = iLevels ++ [separator] ++ oLevels;
+
+		iFunc = OSCFunc({| msg |
+			{
+				iLevels.do({|item, i|
+					item.value     = msg[i * 2 + 4].ampdb.linlin(-40, 0, 0, 1);
+					item.peakLevel = msg[i * 2 + 3].ampdb.linlin(-40, 0, 0, 1);
+				});
+			}.defer;
+		}, '/i_reply', s.addr);
+		iFunc.fix;
+
+		oFunc = OSCFunc({| msg |
+			{
+				oLevels.do({|item, i|
+					item.value     = msg[i * 2 + 4].ampdb.linlin(-40, 0, 0, 1);
+					item.peakLevel = msg[i * 2 + 3].ampdb.linlin(-40, 0, 0, 1);
+				});
+			}.defer;
+		}, '/o_reply', s.addr);
+		oFunc.fix;
+
+		synthFunc = {
+			s.bind({
+				iSynth = SynthDef('iLevels', {
+					var sig;
+					sig = In.ar(NumInputBuses.ir, numIns);
+					SendPeakRMS.kr(sig, 15, 1.5, '/i_reply');
+				}).play(RootNode(s), nil, \addToHead);
+
+				oSynth = SynthDef('oLevels', {
+					var sig;
+					sig = In.ar(0, numOuts);
+					SendPeakRMS.kr(sig, 15, 1.5, '/o_reply');
+				}).play(RootNode(s), nil, \addToTail);
+			});
+		};
+		ServerTree.add(synthFunc, s);
+		if(s.serverRunning, synthFunc);
+
+		qwin.onClose = {
+			iFunc.free;
+			oFunc.free;
+			iSynth.free;
+			oSynth.free;
+			ServerTree.remove(synthFunc, s);
+		};
+
+		//gui
+		qwin.layout = HLayout(
+			VLayout(
+				StaticText()
+				.string_("queue moves on the RELEASE of keys")
+				,
+				StaticText()
+				.background_(Color.green(1, 0.2))
+				.string_("forward: Space")
+				,
+				StaticText()
+				.background_(Color.yellow(1, 0.2))
+				.string_("rewind: Shift + Space")
+				,
+				StaticText()
+				.background_(Color.blue(1, 0.2))
+				.string_("reset: Shift + r")
+				,
+				StaticText()
+				.string_("fired queue:")
+				,
+				tv1 = TextView()
+				.editable_(false)
+				.font_(qFont)
+				.canFocus_(false)
+				,
+				StaticText()
+				.string_("next queue:")
+				,
+				tv2 = TextView()
+				.editable_(false)
+				.font_(qFont)
+				.canFocus_(false)
+				,
+				HLayout(
+					StaticText().string_("jump to queue: "),
+					NumberBox()
+					.value_(0)
+					.action_({|nb|
+						this.jump2Q(nb.value);
+					})
+				)
+			),
+			[
+				slider = Slider()
+				.thumbSize_(40)
+				.background_(Color.grey(0.3))
+				.canFocus_(false)
+				.action_({|sl|
+					if(~cm0.isNil.not && ~cm0.isPlaying, {
+						~cm0.set(\real, cmSpc.map(sl.value));
+					});
+				})
+				,
+				stretch: 0.5]
+			,
+			[
+				qText = StaticText()
+				.font_(Font("Monaco", w * 0.15))
+				.stringColor_(Color.black)
+				.string_("Q")
+				.align_('center')
+				.minWidth_(w * 0.3)
+				,
+				stretch: 1
+			],
+			*levels
+		);
+		qwin.view.keyUpAction_({|v,c,m,u,k|
+			if(u==32, {
+				if(m.isShift, { this.rewindQ }, { this.forwardQ });
+			});
+			if(u==82, { this.resetQ });
+		});
+		this.resetQ;
 		qwin.front;
 
 		MIDIdef.cc(\q, {| v |
 			var time = Date.getDate.rawSeconds;
 			if((v > 32) && ((time - lastTrig) > 0.5), {
-				Routine({
-					qnum.string_(que);
-					this.forwardQ;
-					qnum.stringColor_(Color.white);
-					qnum.background_(Color.green);
-					0.2.wait;
-					qnum.stringColor_(Color.black);
-					qnum.background_(Color.white);
-				}).play(AppClock);
+				this.forwardQ;
 				lastTrig = time;
 			});
 		}, 51, 1);//midi channel is 0-15 in sc
+
 		MIDIdef.cc(\mv2, {| v |
-			{ slider.value = v }.defer;
+			{ slider.value = midiSpc.unmap(v) }.defer;
 			if(~cm0.isNil.not && ~cm0.isPlaying && (v > 0), {
 				~cm0.set(\real, cmSpc.map(midiSpc.unmap(v)));
 			});
 		}, 111, 1);
+
 	}
 	removeResponders {
 		MIDIClient.disposeClient;
