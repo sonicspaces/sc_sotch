@@ -262,34 +262,44 @@ Sotch : Music {
 		SynthDef(\lgst0, {| gate=1, fade=1, amp=0.1 |
 			var lfo, pan, env, sig;
 			pan = LFNoise2.kr(0.4);
-			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
+			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, 1, 0, 1, 2);
 			sig = PlayBuf.ar(1, bufs[4], loop: 1);
-			sig = sig * env;
-			Out.ar(busz[0], sig);
+			sig = sig * amp * env;
 			sig = PanF2.ar(sig, pan);
 			Out.ar(0, sig);
-		}).send(s);
+		}).send;
 
 		SynthDef(\lgst1, {| gate=1, fade=1, amp=0.1 |
 			var pan, env, sig;
 			pan = LFNoise2.kr(0.5);
-			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
+			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, 1, 0, 1, 2);
 			sig = PlayBuf.ar(1, bufs[4], 0.125, loop: 1).below2(0.125);
-			sig = sig * env;
-			Out.ar(busz[0], sig);
+			sig = sig * amp * env;
 			sig = PanF2.ar(sig, pan);
 			Out.ar(0, sig);
-		}).send(s);
+		}).send;
 
 		SynthDef(\cnfr0, {| gate=1, fade=1, amp=1, real=0.1 |
 			var fft, sig, env;
 			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
-			sig = SoundIn.ar(1, env, In.ar(busz[0])).clip2(1.0);
+			sig = SoundIn.ar(1, env).clip2(1.0);
 			fft = FFT(LocalBuf(2048).clear, sig);
 			fft = PV_ConformalMap(fft, real, 1);
 			sig = Pan2.ar(IFFT(fft), LFNoise2.kr(2, 0.4));
 			Out.ar(0, sig);
-		}).send(s);
+		}).send;
+
+		SynthDef(\cnfr1, {| gate=1, fade=1, amp=1, real=0.1 |
+			var fft, sig, env;
+			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
+			sig = PlayBuf.ar(1, bufs[4], 0.125, loop: 1).below2(0.125);
+			fft = FFT(LocalBuf(2048).clear, sig);
+			fft = PV_ConformalMap(fft, real, 1);
+			sig = IFFT(fft);
+			sig = sig * env;
+			sig = Pan2.ar(sig, LFNoise2.kr(2, 1));
+			Out.ar(0, sig);
+		}).send;
 
 		SynthDef(\comb0, {| gate=1, fade=1, amp=1, freq=0.3 |
 			var env, lfo, sig, akr;
@@ -300,7 +310,7 @@ Sotch : Music {
 			sig = CombC.ar(sig, 0.06, lfo, 0.5, env);
 			sig = FreqShift.ar(sig, akr * 30, [0, pi*0.5], add: sig.neg);
 			Out.ar(0, sig * amp);
-		}).send(s);
+		}).send;
 
 	}
 

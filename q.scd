@@ -91,20 +91,17 @@ Routine({ 1.1.wait; ~pb.release(0.03) }).play;
 ~cut.end;
 //33
 /* ___________________ mv 2 ___________________ */
-~lg0 = Synth(\lgst0, [fade: 10, amp: 0.05]);
+~lg0 = Synth(\lgst0, [fade: 30, amp: 0.05]);
 //34
 ~lg0.release(40);
-~lg1 = Synth(\lgst1, [fade: 40, amp: 0.6]);
+~lg1 = Synth(\lgst1, [fade: 80, amp: 0.6]);
 Routine({
-	15.wait;
-	s.bind({
-		~cm0 = Synth(\cnfr0, [fade: 5, amp: 0.5]);
-		~cm0.register;
-	});
-	120.wait;
-	~lg1.release(0.03);
+	40.wait;
+	~cm0 = Synth(\cnfr0, [fade: 8, amp: 0.5]).register;
 }).play;
 //35
+~lg1.release(0.1);
+~lg0 = Synth(\lgst0, [fade: 0.03, amp: 0.02]);
 ~cut = BBCut2(
 		CutStream1(s.options.numOutputBusChannels + 1),
 		WarpCutProc1(
@@ -116,12 +113,17 @@ Routine({
 		)
 );
 ~cut.play(1.8).amp_(1);
+Routine({
+	3.wait;
+	~cm1 = Synth(\cnfr1, [fade: 10, amp: 0.3, real: 0.4]);
+}).play;
 //36
-~cm0.release;
-~lg1.release(20);
+~cm0.release(1);
+~lg0.release(20);
 ~cut.end;
 //37
 /* ___________________ mv 3 ___________________ */
+~cm1.release(8);
 ~ac = Synth(\comb0, [fade: 1, amp: 0.1]);
 //38
 ~ac.set(\freq, 5.0);
