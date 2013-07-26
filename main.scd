@@ -9,5 +9,5 @@ m.end;
 t = MIDIOut(0);
 t.control(1,  51, 33);//que
 t.control(1, 111, 127);//slider
-
+t.control(1, 12, 35);//mute
 m.openScoreFile;

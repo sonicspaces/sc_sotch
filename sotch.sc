@@ -1,6 +1,17 @@
 
 Sotch : Music {
+	var <slider;
 
+	setupServer {
+		s = Server.default;
+		options = ServerOptions()
+		.sampleRate_(44100)
+		.numInputBusChannels_(2)
+		.numOutputBusChannels_(4)
+		;
+		s.options = options;
+		s.volume.setVolumeRange(-90, 12);
+	}
 	allocBufs {
 		bufs.add(Buffer.read(s, path ++ "sotch0.aif"));
 		bufs.add(Buffer.read(s, path ++ "sotch1.aif"));
@@ -21,7 +32,7 @@ Sotch : Music {
 		var midiSpc = \midi.asSpec;
 		var cmSpc = [0.1, 4.0].asSpec;
 		//gui addition
-		var slider, h, w;
+		var h, w;
 		//meters
 		var iLevels, oLevels, levels, iFunc, oFunc, iSynth, oSynth, synthFunc;
 		var numIns = s.options.numInputBusChannels;
@@ -35,7 +46,7 @@ Sotch : Music {
 
 		//window
 		qwin = Window(this.class.asString, Rect(100, 100, w * 0.7, h * 0.5));
-		qwin.alwaysOnTop = true;
+		qwin.alwaysOnTop = false;
 
 		//midi
 		MIDIClient.init;
@@ -44,8 +55,8 @@ Sotch : Music {
 		//meters
 		separator = UserView();
 		separator.drawFunc = {|v|
-			Pen.moveTo(0@v.bounds.height);
-			Pen.lineTo(0@0);
+			Pen.strokeColor = Color.black;
+			Pen.line(0@0, 0@v.bounds.height);
 			Pen.stroke;
 		};
 		iLevels = Array.fill(numIns, {
@@ -54,7 +65,6 @@ Sotch : Music {
 			.warning_(0.8)
 			.numTicks_(9)
 			.numMajorTicks_(3)
-			.value_(1.0.rand)
 			;
 		});
 		oLevels = Array.fill(numOuts, {
@@ -63,7 +73,6 @@ Sotch : Music {
 			.warning_(0.8)
 			.numTicks_(9)
 			.numMajorTicks_(3)
-			.value_(1.0.rand)
 			;
 		});
 		levels = iLevels ++ [separator] ++ oLevels;
@@ -92,7 +101,7 @@ Sotch : Music {
 			s.bind({
 				iSynth = SynthDef('iLevels', {
 					var sig;
-					sig = In.ar(NumInputBuses.ir, numIns);
+					sig = In.ar(NumOutputBuses.ir, numIns);
 					SendPeakRMS.kr(sig, 15, 1.5, '/i_reply');
 				}).play(RootNode(s), nil, \addToHead);
 
@@ -160,7 +169,7 @@ Sotch : Music {
 			[
 				slider = Slider()
 				.thumbSize_(40)
-				.background_(Color.grey(0.3))
+				.background_(Color.white)
 				.canFocus_(false)
 				.action_({|sl|
 					if(~cm0.isNil.not && ~cm0.isPlaying, {
@@ -191,13 +200,53 @@ Sotch : Music {
 		this.resetQ;
 		qwin.front;
 
-		MIDIdef.cc(\q, {| v |
+		MIDIdef.cc(\forward, {| v |
 			var time = Date.getDate.rawSeconds;
 			if((v > 32) && ((time - lastTrig) > 0.5), {
 				this.forwardQ;
 				lastTrig = time;
 			});
 		}, 51, 1);//midi channel is 0-15 in sc
+
+		MIDIdef.cc(\rewind, {| v |
+			var time = Date.getDate.rawSeconds;
+			if((v > 32) && ((time - lastTrig) > 0.5), {
+				this.rewindQ;
+				lastTrig = time;
+			});
+		}, 91, 1);
+
+		MIDIdef.cc(\serverOnOff,{| v |
+			var time = Date.getDate.rawSeconds;
+			if((v > 32) && ((time - lastTrig) > 0.5), {
+				if(s.serverRunning, { s.quit }, { s.boot });
+				lastTrig = time;
+			});
+		}, 61, 1);
+
+		MIDIdef.cc(\reset, {| v |
+			var time = Date.getDate.rawSeconds;
+			if((v > 32) && ((time - lastTrig) > 0.5), {
+				this.resetQ;
+				lastTrig = time;
+			});
+		}, 62, 1);
+
+		MIDIdef.cc(\muteUnmute, {| v |
+			var time = Date.getDate.rawSeconds;
+			if((v > 32) && ((time - lastTrig) > 0.5), {
+				if(s.volume.isMuted, { s.unmute }, { s.mute });
+				lastTrig = time;
+			});
+		}, 12, 1);
+
+		MIDIdef.program(\end, {| v |
+			var time = Date.getDate.rawSeconds;
+			if((v > 32) && ((time - lastTrig) > 0.5), {
+				this.end;
+				lastTrig = time;
+			});
+		});
 
 		MIDIdef.cc(\mv2, {| v |
 			{ slider.value = midiSpc.unmap(v) }.defer;
@@ -223,7 +272,7 @@ Sotch : Music {
 			fft = PV_MagFreeze(fft, LFPulse.kr(freq, 0, 0.9));
 			fft = PV_BinScramble(fft, wipe, width, akr > 0.2);
 			sig = Pan2.ar(IFFT(fft) * env, LFNoise2.kr(freq, pan));
-			Out.ar(0, sig);
+			Out.ar(2, sig);
 		}).send(s);
 
 		SynthDef(\freeze1, {| gate=1, fade=1, amp=1, freq=1, wipe=1, width=1, pan=0.5 |
@@ -235,7 +284,7 @@ Sotch : Music {
 			fft = PV_MagFreeze(fft, LFPulse.kr(TRand.kr(freq * 0.3, freq, akr > 0.2), 0, 0.9));
 			fft = PV_BinScramble(fft, wipe, width, akr > 0.2);
 			sig = Pan2.ar(IFFT(fft) * env, LFNoise2.kr(freq, pan));
-			Out.ar(0, sig);
+			Out.ar(2, sig);
 		}).send(s);
 
 		SynthDef(\ca0, {| gate=1, fade=1, amp=1, buf, rate=1 |
@@ -286,7 +335,7 @@ Sotch : Music {
 			fft = FFT(LocalBuf(2048).clear, sig);
 			fft = PV_ConformalMap(fft, real, 1);
 			sig = Pan2.ar(IFFT(fft), LFNoise2.kr(2, 0.4));
-			Out.ar(0, sig);
+			Out.ar(2, sig);
 		}).send;
 
 		SynthDef(\cnfr1, {| gate=1, fade=1, amp=1, real=0.1 |
@@ -309,7 +358,7 @@ Sotch : Music {
 			akr = Amplitude.kr(sig);
 			sig = CombC.ar(sig, 0.06, lfo, 0.5, env);
 			sig = FreqShift.ar(sig, akr * 30, [0, pi*0.5], add: sig.neg);
-			Out.ar(0, sig * amp);
+			Out.ar(2, sig * amp);
 		}).send;
 
 	}

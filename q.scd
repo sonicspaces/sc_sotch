@@ -15,7 +15,7 @@
 ~fz.release(0.1);
 //7
 ~cut = BBCut2(
-		CutStream1(),
+	CutGroup([CutStream0(), CutMixer(2)]),
 		WarpCutProc1(
 			{ [1.3, 2.6, 5.2] wchoose: [0.7, 0.2, 0.1] },
 			{ [9, 19, 35].choose },
@@ -39,7 +39,7 @@
 //13
 ~cut.end;
 ~cut = BBCut2(
-		CutStream1(),
+		CutGroup([CutStream0(), CutMixer(2)]),
 		WarpCutProc1(
 			{ [1, 2, 4] wchoose: [0.7, 0.2, 0.1] },
 			{ [9, 19, 29].choose },
@@ -98,12 +98,13 @@ Routine({ 1.1.wait; ~pb.release(0.03) }).play;
 Routine({
 	40.wait;
 	~cm0 = Synth(\cnfr0, [fade: 8, amp: 0.5]).register;
+	{ m.slider.background = Color.black }.defer;
 }).play;
 //35
 ~lg1.release(0.1);
 ~lg0 = Synth(\lgst0, [fade: 0.03, amp: 0.02]);
 ~cut = BBCut2(
-		CutStream1(s.options.numOutputBusChannels + 1),
+	CutGroup([CutStream1(s.options.numOutputBusChannels + 1), CutMixer(2)]),
 		WarpCutProc1(
 			{ [1.3, 2.6, 5.2] wchoose: [0.7, 0.2, 0.1] },
 			{ [9, 19, 35].choose },
@@ -130,7 +131,7 @@ Routine({
 //39
 ~ca1 = Synth(\ca1, [fade: 0, buf: m.bufs[6]]);
 ~cut = BBCut2(
-		CutStream1(),
+		CutGroup([CutStream0(), CutMixer(2)]),
 		WarpCutProc1(
 			{ [1,2,4] wchoose: [0.7,0.2,0.1] },
 			{ [9,19,29].choose },
@@ -149,7 +150,7 @@ Routine({
 ~cut.pause;
 //42
 ~cut = BBCut2(
-		CutStream1(),
+		CutGroup([CutStream0(), CutMixer(2)]),
 		WarpCutProc1(
 			{ [1, 2, 4] wchoose: [0.7, 0.2, 0.1] },
 			{ [9, 19, 29].choose },
@@ -168,7 +169,7 @@ Routine({
 //43
 ~cut.end;
 ~cut = BBCut2(
-		CutStream1(),
+		CutGroup([CutStream0(), CutMixer(2)]),
 		WarpCutProc1(
 			{ [1, 2, 4] wchoose: [0.7, 0.2, 0.1] },
 			{ [9, 19, 29].choose },
