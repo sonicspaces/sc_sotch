@@ -266,7 +266,7 @@ Sotch : Music {
 			var fft, akr, sig, env, buf;
 			buf = LocalBuf(512).clear;
 			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
-			sig = Mix(SoundIn.ar([0, 1]).clip2(0.1)) * 10 * env;
+			sig = Mix(SoundIn.ar([0, 1]).clip2(1)) * env;
 			akr = Amplitude.kr(sig);
 			fft = FFT(buf, sig);
 			fft = PV_MagFreeze(fft, LFPulse.kr(freq, 0, 0.9));
@@ -278,7 +278,7 @@ Sotch : Music {
 		SynthDef(\freeze1, {| gate=1, fade=1, amp=1, freq=1, wipe=1, width=1, pan=0.5 |
 			var fft, akr, sig, env;
 			env = EnvGen.kr(Env.asr(fade, 1, fade, 3), gate, amp, 0, 1, 2);
-			sig = Mix(SoundIn.ar([0, 1]).clip2(0.1)) * 10 * env;
+			sig = Mix(SoundIn.ar([0, 1]).clip2(1)) * env;
 			akr = Amplitude.kr(sig);
 			fft = FFT(LocalBuf(512).clear, sig);
 			fft = PV_MagFreeze(fft, LFPulse.kr(TRand.kr(freq * 0.3, freq, akr > 0.2), 0, 0.9));

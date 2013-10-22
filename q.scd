@@ -1,7 +1,7 @@
 //0
 "initialize"
 //1
-~fz = Synth(\freeze0, [fade: 1, freq: 50, amp: 0.2, wipe: 1]);
+~fz = Synth(\freeze0, [fade: 1, freq: 50, amp: 0.3, wipe: 1]);
 //2
 ~fz.release(0.1);
 //3
